@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border:1px solid #d3d3d3;
+    background-color: #f1f1f1;
+}
+</style>
+</head>
+<body onload="startGame()">
+<script>
+
+var myGamePiece;
+var myObstacles = [];
+var myBackGround, backGround1;
+var myScore;
+
+
+function startGame() {
+    myGamePiece = new component(40, 60, '/home/rhythm/geek_school/game/images/princess.png', 245, 200,     'image');
+   // myGamePiece = new component(60, 60, "red", 245, 200);
+    myBackGround = new component(656, 270, "/home/rhythm/geek_school/game/images/grass.png", 0, 0, "image");
+    backGround1 = new component(480, 130, "/home/rhythm/geek_school/game/images/water.png", 0,0, "image");
+    myScore = new component("20px", "Consolas", "black", 280, 40, "text");
+    myGameArea.start();
+}
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.width = 480;
+        this.canvas.height = 270;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.frameNo = 0;
+        this.interval = setInterval(updateGameArea, 20);
+        window.addEventListener('keydown', function (e) {
+            myGameArea.key = e.keyCode;
+        })
+        window.addEventListener('keyup', function (e) {
+            myGameArea.key = false;
+        })
+        },
+
+    clear : function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    },
+    stop : function() {
+        clearInterval(this.interval);
+    }
+}
+
+function component(width, height, color, x, y,type) {
+    this.type = type;
+    if (this.type == "image") {
+        this.image = new Image();
+        this.image.src = color;
+    }
+    this.width = width;
+    this.height = height;
+    this.speedX = 0;
+    this.speedY = 0;    
+    this.x = x;
+    this.y = y;    
+    this.update = function() {
+        ctx = myGameArea.context;
+        if (this.type == "text") {
+            ctx.font = this.width + " " + this.height;
+            ctx.fillStyle = color;
+            ctx.fillText(this.text, this.x, this.y);
+        }
+        else if (this.type == "image") {
+            ctx.drawImage(this.image,
+            this.x,
+            this.y,
+            this.width, this.height);
+        } 
+        else {
+            ctx.fillStyle = color;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+   }
+    this.newPos = function() {
+        this.x += this.speedX;
+        this.y += this.speedY;        
+    }    
+    this.crashWith = function(otherobj) {
+        var myleft = this.x;
+        var myright = this.x + (this.width);
+        var mytop = this.y;
+        var mybottom = this.y + (this.height);
+        var otherleft = otherobj.x;
+        var otherright = otherobj.x + (otherobj.width);
+        var othertop = otherobj.y;
+        var otherbottom = otherobj.y + (otherobj.height);
+        var crash = true;
+        if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
+            crash = false;
+        }
+        return crash;
+
+    }
+    this.crashWithBorders = function(){
+           return myGamePiece.x+myGamePiece.width >= myGameArea.canvas.width || myGamePiece.x < 0
+           || myGamePiece.y+myGamePiece.height >= myGameArea.canvas.height || myGamePiece.y < 0;
+    }
+}
+function updateGameArea() {
+    var x, height, gap, minHeight, maxHeight, minGap, maxGap;
+    if(myGamePiece.crashWithBorders()){
+        myGameArea.stop();
+    }
+    for (i = 0; i < myObstacles.length; i += 1) {
+        if (myGamePiece.crashWith(myObstacles[i])) {
+            myGameArea.stop();
+            //setTimeout( startGame, 2000 );
+           // myGameArea.frameNo = 0; 
+            return; //TODO: Remove this
+        }
+    }
+    myGameArea.clear();
+    myGamePiece.speedX = 0;
+    myGamePiece.speedY = 0;
+    if (myGameArea.key && myGameArea.key == 37) {myGamePiece.speedX = -1; }
+    if (myGameArea.key && myGameArea.key == 39) {myGamePiece.speedX = 1; }
+    if (myGameArea.key && myGameArea.key == 38) {myGamePiece.speedY = -1; }
+    if (myGameArea.key && myGameArea.key == 40) {myGamePiece.speedY = 1; }
+    myBackGround.update();
+    backGround1.update();
+    myGameArea.frameNo += 1;
+    if (myGameArea.frameNo == 1 || everyinterval(150)) {
+        x = myGameArea.canvas.width;
+        y = myGameArea.canvas.height;
+        minHeight = 20;
+        maxHeight = 200;
+        var topOffset = Math.floor(Math.random()*(200));
+        height = Math.floor(Math.random()*(y-topOffset));
+        minGap = 50;
+        maxGap = 150;
+        gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
+        var bottomOffset = Math.floor(Math.random()*(y - height - gap - topOffset));
+        myObstacles.push(new component(50, 30, '/home/rhythm/geek_school/game/images/bug.png', x, topOffset,'image'));
+        myObstacles.push(new component(50, 30, "/home/rhythm/geek_school/game/images/bug.png", x, topOffset+height + gap,'image'));
+     //myObstacles.push(new component(60, 60, "green", x, topOffset));
+      //  myObstacles.push(new component(60, 60, "green", x, topOffset+height + gap));
+    }
+    for (i = 0; i < myObstacles.length; i += 1) {
+        myObstacles[i].x += -1;
+        myObstacles[i].update();
+    }
+    myScore.text="SCORE: " + myGameArea.frameNo;
+    myScore.update();
+    myGamePiece.newPos();    
+    myGamePiece.update();
+}
+
+function everyinterval(n) {
+    if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
+    return false;
+}
+
+function moveup() {
+    myGamePiece.speedY = -2; 
+}
+
+function movedown() {
+    myGamePiece.speedY = 2; 
+}
+
+function moveleft() {
+    myGamePiece.speedX = -1; 
+}
+
+function moveright() {
+    myGamePiece.speedX = 1; 
+}
+
+function clearmove() {
+    myGamePiece.speedX = 0; 
+    myGamePiece.speedY = 0; 
+}
+</script>
+<div style="text-align:center;width:480px;">
+  <button onmousedown="moveup()" onmouseup="clearmove()" >&#8593; </button><br><br>
+  <button onmousedown="moveleft()" onmouseup="clearmove()">&#8592;</button>
+  <button onmousedown="moveright()" onmouseup="clearmove()" >    &#8594;</button><br><br>
+  <button onmousedown="movedown()" onmouseup="clearmove()">    &#8595;    </button>
+</div>
+</body>
+</html>
