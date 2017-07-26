@@ -16,14 +16,23 @@ var myGamePiece;
 var myObstacles = [];
 var myBackGround, backGround1;
 var myScore;
+var fire; 
+var myScore2;
+var myGem;
+var myGem1;
+var endGame;
 
 
 function startGame() {
-    myGamePiece = new component(40, 60, '/home/rhythm/geek_school/game/images/princess.png', 245, 200,     'image');
+    myGamePiece = new component(40, 60, 'images/princess.png', 245, 200,'image');
    // myGamePiece = new component(60, 60, "red", 245, 200);
-    myBackGround = new component(656, 270, "/home/rhythm/geek_school/game/images/grass.png", 0, 0, "image");
-    backGround1 = new component(480, 130, "/home/rhythm/geek_school/game/images/water.png", 0,0, "image");
+    myGem = new component(30, 30, 'images/gem.png', 50 , 100, 'image');
+    myGem1 = new component(30, 30, 'images/gem.png', 200 , 170, 'image');
+    myBackGround = new component(656, 270, "images/grass.png", 0, 0, "image");
+    backGround1 = new component(480, 130, "images/water.png", 0,0, "image");
     myScore = new component("20px", "Consolas", "black", 280, 40, "text");
+    endGame = new component("20px", "Consolas", "red", 100, 100, "text");
+    fire = new component(60, 60, "images/fire.png", 240,135, "image");
     myGameArea.start();
 }
 
@@ -38,19 +47,23 @@ var myGameArea = {
         this.interval = setInterval(updateGameArea, 20);
         window.addEventListener('keydown', function (e) {
             myGameArea.key = e.keyCode;
+            myGamePiece.speedX = 0;
+            myGamePiece.speedY = 0;
         })
         window.addEventListener('keyup', function (e) {
             myGameArea.key = false;
+            myGamePiece.speedX = 0;
+            myGamePiece.speedY = 0;
         })
         },
 
-    clear : function() {
+        clear : function() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    },
-    stop : function() {
+        },
+        stop : function() {
         clearInterval(this.interval);
+        }
     }
-}
 
 function component(width, height, color, x, y,type) {
     this.type = type;
@@ -82,6 +95,11 @@ function component(width, height, color, x, y,type) {
             ctx.fillRect(this.x, this.y, this.width, this.height);
         }
    }
+   this.clear = function(){
+    ctx = myGameArea.context;
+    console.log(this.x, this.y, this.width, this.height)
+    ctx.clearRect(this.x, this.y, this.width, this.height);
+   }
     this.newPos = function() {
         this.x += this.speedX;
         this.y += this.speedY;        
@@ -100,20 +118,61 @@ function component(width, height, color, x, y,type) {
             crash = false;
         }
         return crash;
-
-    }
+     }
     this.crashWithBorders = function(){
            return myGamePiece.x+myGamePiece.width >= myGameArea.canvas.width || myGamePiece.x < 0
            || myGamePiece.y+myGamePiece.height >= myGameArea.canvas.height || myGamePiece.y < 0;
     }
+    this.crashWithGem = function(){
+        
+        if((myGamePiece.x == myGem.x) || (myGamePiece.y == myGem.y)){
+            return true;
+            console.log('takar');
+        }
+        return false;
+
+     }   
 }
+
+// var start = null;
+// var endWidth = 30;
+// function step(timestamp) {
+//    //fire.clear();
+//    //fire.text= "Game Over";
+//    ctx = myGameArea.context;
+//   if (!start) start = timestamp;
+//   var progress = timestamp - start;
+//   //endWidth+=1
+//  // fire.width = JSON.stringify(endWidth)+"px";
+//   //console.log(ctx.font);
+//   fire.update();
+//   if (progress < 200) {
+//     window.requestAnimationFrame(step);
+//   }
+
+// }
 function updateGameArea() {
     var x, height, gap, minHeight, maxHeight, minGap, maxGap;
     if(myGamePiece.crashWithBorders()){
+        //window.requestAnimationFrame(step);
+        endGame.text= "Game Over";
+        endGame.update();
         myGameArea.stop();
+        return;
+    }
+    if(myGamePiece.crashWithGem()){
+    //   endGame.text= "Game Over";
+    //    endGame.update();
+    //    myGameArea.stop();
+        return; 
     }
     for (i = 0; i < myObstacles.length; i += 1) {
         if (myGamePiece.crashWith(myObstacles[i])) {
+            fire.x =myGamePiece.x
+            fire.y = myGamePiece.y
+            fire.update();
+            endGame.text= "Game Over";
+            endGame.update();
             myGameArea.stop();
             //setTimeout( startGame, 2000 );
            // myGameArea.frameNo = 0; 
@@ -121,8 +180,7 @@ function updateGameArea() {
         }
     }
     myGameArea.clear();
-    myGamePiece.speedX = 0;
-    myGamePiece.speedY = 0;
+    
     if (myGameArea.key && myGameArea.key == 37) {myGamePiece.speedX = -1; }
     if (myGameArea.key && myGameArea.key == 39) {myGamePiece.speedX = 1; }
     if (myGameArea.key && myGameArea.key == 38) {myGamePiece.speedY = -1; }
@@ -141,10 +199,9 @@ function updateGameArea() {
         maxGap = 150;
         gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
         var bottomOffset = Math.floor(Math.random()*(y - height - gap - topOffset));
-        myObstacles.push(new component(50, 30, '/home/rhythm/geek_school/game/images/bug.png', x, topOffset,'image'));
-        myObstacles.push(new component(50, 30, "/home/rhythm/geek_school/game/images/bug.png", x, topOffset+height + gap,'image'));
-     //myObstacles.push(new component(60, 60, "green", x, topOffset));
-      //  myObstacles.push(new component(60, 60, "green", x, topOffset+height + gap));
+        myObstacles.push(new component(50, 30, 'images/bug.png', x, topOffset,'image'));
+        myObstacles.push(new component(50, 30, "images/bug.png", x, topOffset+height + gap,'image'));
+     
     }
     for (i = 0; i < myObstacles.length; i += 1) {
         myObstacles[i].x += -1;
@@ -152,8 +209,11 @@ function updateGameArea() {
     }
     myScore.text="SCORE: " + myGameArea.frameNo;
     myScore.update();
+    
     myGamePiece.newPos();    
     myGamePiece.update();
+    myGem.update();
+    myGem1.update();
 }
 
 function everyinterval(n) {
@@ -163,10 +223,12 @@ function everyinterval(n) {
 
 function moveup() {
     myGamePiece.speedY = -2; 
+    console.log('here');
 }
 
 function movedown() {
-    myGamePiece.speedY = 2; 
+    myGamePiece.speedY = 2;
+    console.log('here'); 
 }
 
 function moveleft() {
@@ -185,8 +247,8 @@ function clearmove() {
 <div style="text-align:center;width:480px;">
   <button onmousedown="moveup()" onmouseup="clearmove()" >&#8593; </button><br><br>
   <button onmousedown="moveleft()" onmouseup="clearmove()">&#8592;</button>
-  <button onmousedown="moveright()" onmouseup="clearmove()" >    &#8594;</button><br><br>
-  <button onmousedown="movedown()" onmouseup="clearmove()">    &#8595;    </button>
+  <button onmousedown="moveright()" onmouseup="clearmove()" > &#8594;</button><br><br>
+  <button onmousedown="movedown()" onmouseup="clearmove()"> &#8595; </button>
 </div>
 </body>
 </html>
